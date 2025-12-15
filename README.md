@@ -50,15 +50,15 @@ Welcome to **70s Car Culture**, a web application dedicated to the golden era of
 
 ## 📦 Deployment
 
-This project is configured for deployment to **GitHub Pages**.
+This project is configured for **Automated Deployment** using GitHub Actions.
 
-To deploy the latest version:
+To deploy changes:
+1.  **Commit and Push** your changes to the `main` branch.
+2.  GitHub Actions will automatically build the project and deploy it to the `gh-pages` branch.
+3.  Visit your site at: `https://raa14gon.github.io/70sCarCulture-s/`
 
-```bash
-npm run deploy
-```
+*(Note: The deployment process may take 1-2 minutes after pushing).*
 
-This command builds the project and pushes the `dist` folder to the `gh-pages` branch.
 
 ## 📂 Project Structure
 
