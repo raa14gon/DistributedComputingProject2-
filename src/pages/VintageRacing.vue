@@ -83,7 +83,7 @@ export default {
 
 <style scoped>
 .vintage-header {
-    background: linear-gradient(135deg, #F58F56 0%, #d96e3e 100%);
+    background: linear-gradient(135deg, #92D4F0 0%, #92D4F0 100%);
     padding: 40px 20px;
     border-bottom: 8px solid black;
 }
