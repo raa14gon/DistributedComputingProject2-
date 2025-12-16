@@ -1,7 +1,5 @@
-// Serviço GraphQL para comunicação com o backend
 const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || 'http://localhost:8000/graphql';
 
-// Helper para fazer requisições GraphQL
 const graphqlRequest = async (query, variables = {}) => {
     const token = localStorage.getItem('access_token');
     const headers = {
@@ -31,7 +29,6 @@ const graphqlRequest = async (query, variables = {}) => {
     return result.data;
 };
 
-// Auth Service
 export const authService = {
     async login(username, password) {
         const query = `
@@ -109,7 +106,6 @@ export const authService = {
     }
 };
 
-// Stats Service
 export const statsService = {
     async getStats() {
         const query = `
@@ -133,7 +129,6 @@ export const statsService = {
     }
 };
 
-// Car Service
 export const carService = {
     async getCars(skip = 0, limit = 100) {
         const query = `
@@ -209,7 +204,6 @@ export const carService = {
     }
 };
 
-// Magazine Service
 export const magazineService = {
     async getMagazines(skip = 0, limit = 100) {
         const query = `
@@ -250,7 +244,6 @@ export const magazineService = {
     }
 };
 
-// Race Service
 export const raceService = {
     async getRaces(skip = 0, limit = 100) {
         const query = `
@@ -291,7 +284,6 @@ export const raceService = {
     }
 };
 
-// User Service
 export const userService = {
     async getUsers(skip = 0, limit = 100) {
         const query = `

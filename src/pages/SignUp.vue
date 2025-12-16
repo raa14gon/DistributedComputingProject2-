@@ -10,30 +10,26 @@
                 <h2>Sign Up</h2>
                 <form @submit.prevent="handleSignUp">
                     <div class="form-group">
-                        <label for="fullname">Full Name</label>
-                        <input type="text" id="fullname" v-model="fullname" placeholder="Enter your full name" required>
+                        <label for="username">Username</label>
+                        <input type="text" id="username" v-model="form.username" placeholder="Choose a username" required>
                     </div>
 
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" v-model="email" placeholder="Enter your email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" v-model="username" placeholder="Choose a username" required>
+                        <input type="email" id="email" v-model="form.email" placeholder="Enter your email" required>
                     </div>
 
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" v-model="password" placeholder="Create a password"
-                            required>
+                        <input type="password" id="password" v-model="form.password" placeholder="Create a password" required minlength="8">
                     </div>
 
                     <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" v-model="confirmPassword"
-                            placeholder="Confirm your password" required>
+                        <label for="role">Role (Demo)</label>
+                         <select v-model="form.role" class="form-control" style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; border-radius: 8px;">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
                     </div>
 
                     <button type="submit" class="btn-signup">
@@ -41,39 +37,142 @@
                     </button>
                 </form>
 
+                <p v-if="error" class="error-msg">{{ error }}</p>
+
                 <div class="signup-footer">
                     <p>Already have an account? <router-link to="/Login">Sign in</router-link></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div v-if="showSuccess" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Success!</h3>
+                </div>
+                <div class="modal-body">
+                    <p>Your account has been created successfully.</p>
+                </div>
+                <div class="modal-footer">
+                    <button @click="goToLogin" class="btn-modal">Go to Login</button>
                 </div>
             </div>
         </div>
     </div>
 </template>
 
-<script>
-export default {
-    data() {
-        return {
-            fullname: '',
-            email: '',
-            username: '',
-            password: '',
-            confirmPassword: ''
+<script setup>
+import { reactive, ref } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import { useRouter } from 'vue-router';
+
+const form = reactive({
+  username: '',
+  email: '',
+  password: '',
+  role: 'user'
+});
+const error = ref('');
+const showSuccess = ref(false); // New State
+const authStore = useAuthStore();
+const router = useRouter();
+
+const handleSignUp = async () => {
+    console.log("Attempting registration:", form); // Debug Log
+    try {
+        const success = await authStore.register(form);
+        console.log("Registration result:", success); // Debug Log
+        if (success) {
+             showSuccess.value = true;
         }
-    },
-    methods: {
-        handleSignUp() {
-            if (this.password !== this.confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-            console.log('Sign up attempt:', this.username);
-            this.$router.push('/Home');
+    } catch (err) {
+        console.error("Registration error:", err); // Debug Log
+        // Handle Axios Network Error object structure
+        if (err.code === "ERR_NETWORK") {
+             error.value = "Network Error: Cannot connect to server at localhost:8000. Is backend running?";
+        } else {
+             error.value = err.response?.data?.detail || err.message || 'Registration failed';
         }
     }
+};
+
+const goToLogin = () => {
+    showSuccess.value = false;
+    router.push('/Login');
 }
 </script>
 
 <style scoped>
+.error-msg {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 3px solid #1a1a1a;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-header h3 {
+    margin: 0 0 15px 0;
+    color: #1a1a1a;
+    font-family: 'Jersey 25', sans-serif;
+    font-size: 2em;
+}
+
+.modal-body p {
+    font-size: 1.2em;
+    margin-bottom: 25px;
+    color: #333;
+}
+
+.btn-modal {
+    background-color: #1a1a1a;
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    font-family: 'Jersey 25', sans-serif;
+    transition: all 0.2s;
+}
+
+.btn-modal:hover {
+    background-color: #646cff;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Original Styles */
 .signup-page {
     min-height: 100vh;
     display: flex;

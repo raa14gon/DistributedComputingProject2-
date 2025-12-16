@@ -2,479 +2,440 @@
     <div class="admin-page">
         <div class="admin-container">
             <div class="admin-header">
-                <h1>⚙️ Admin Panel</h1>
-                <p>70s Car Culture - Administration Dashboard</p>
+                <h1>Admin Dashboard</h1>
+                <p>Platform Management & Analytics</p>
+                <div class="header-buttons">
+                    <button @click="goHome" class="btn-home">Back to Home</button>
+                    <button @click="handleLogout" class="btn-logout">Logout</button>
+                </div>
             </div>
 
-            <div v-if="loading" class="loading">
-                <p>Loading statistics...</p>
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <h3>Users</h3>
+                    <div class="stat-value">{{ stats.users }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Cars Stored</h3>
+                    <div class="stat-value">{{ stats.cars_count }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Races Stored</h3>
+                    <div class="stat-value">{{ stats.races_stored }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>API Logs</h3>
+                    <div class="stat-value">{{ stats.api_calls_logged }}</div>
+                </div>
             </div>
 
-            <div v-else-if="error" class="error-message">
-                <p>{{ error }}</p>
-                <button @click="loadStats" class="retry-btn">Retry</button>
+            <!-- Actions Row -->
+            <div class="actions-card">
+                <h2>Data Management</h2>
+                <div class="action-buttons">
+                    <div class="action-group">
+                        <h4>1. Sync Content</h4>
+                        <p>Push frontend car cards to the backend database.</p>
+                        <button @click="syncCars" :disabled="loading" class="btn-action">
+                            <i class="fas fa-sync"></i> Sync Cards to DB
+                        </button>
+                    </div>
+
+                    <div class="action-group">
+                        <h4>2. Fetch History</h4>
+                        <p>Import Races & Weather for 1970-1979.</p>
+                        <button @click="run70sETL" :disabled="loading" class="btn-action">
+                            <i class="fas fa-database"></i> Load 70s Data (1970-79)
+                        </button>
+                    </div>
+                </div>
+                <div v-if="message" :class="['status-msg', isError ? 'error' : 'success']">
+                    {{ message }}
+                </div>
             </div>
 
-            <div v-else class="admin-content">
-                <div class="admin-card">
-                    <h2>📊 Dashboard</h2>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon">👥</div>
-                            <div class="stat-info">
-                                <h3>Total Users</h3>
-                                <p class="stat-number">{{ stats.total_users }}</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🚗</div>
-                            <div class="stat-info">
-                                <h3>Total Cars</h3>
-                                <p class="stat-number">{{ stats.total_cars }}</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">📰</div>
-                            <div class="stat-info">
-                                <h3>Magazines</h3>
-                                <p class="stat-number">{{ stats.total_magazines }}</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🏁</div>
-                            <div class="stat-info">
-                                <h3>Races</h3>
-                                <p class="stat-number">{{ stats.total_races }}</p>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Logs Section -->
+            <div class="logs-card">
+                <h2>Recent System Logs</h2>
+                <div class="logs-table-wrapper">
+                    <table class="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Method</th>
+                                <th>Endpoint</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="log in logs" :key="log._id">
+                                <td>{{ new Date(log.timestamp).toLocaleString() }}</td>
+                                <td>{{ log.method }}</td>
+                                <td>{{ log.endpoint }}</td>
+                                <td :class="getStatusClass(log.status_code)">{{ log.status_code }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div class="admin-actions">
-                    <div class="action-card">
-                        <h3>📝 Content Management</h3>
-                        <div class="action-buttons">
-                            <button class="action-btn">Manage Cars</button>
-                            <button class="action-btn">Manage Magazines</button>
-                            <button class="action-btn">Manage Races</button>
-                        </div>
-                    </div>
-
-                    <div class="action-card">
-                        <h3>👥 User Management</h3>
-                        <div class="action-buttons">
-                            <button class="action-btn">View Users</button>
-                            <button class="action-btn">Add User</button>
-                            <button class="action-btn">User Permissions</button>
-                        </div>
-                    </div>
-
-                    <div class="action-card">
-                        <h3>⚙️ Settings</h3>
-                        <div class="action-buttons">
-                            <button class="action-btn">Site Settings</button>
-                            <button class="action-btn">API Configuration</button>
-                            <button class="action-btn">Backup & Restore</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="back-to-site">
-                    <router-link to="/Home" class="back-btn">← Back to Site</router-link>
-                </div>
+                <button @click="fetchLogs" class="btn-refresh">Refresh Logs</button>
             </div>
         </div>
     </div>
 </template>
 
-<script>
-// Você pode usar REST API ou GraphQL
-import { statsService } from '../services/api.js';
-// import { statsService } from '../services/graphql.js'; // Descomente para usar GraphQL
+<script setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 
-export default {
-    name: 'Admin',
-    data() {
-        return {
-            stats: {
-                total_users: 0,
-                total_cars: 0,
-                total_magazines: 0,
-                total_races: 0
-            },
-            loading: true,
-            error: null
-        }
-    },
-    mounted() {
-        this.loadStats();
-    },
-    methods: {
-        async loadStats() {
-            this.loading = true;
-            this.error = null;
+const stats = ref({ users: 0, races_stored: 0, api_calls_logged: 0, cars_count: 0 });
+const logs = ref([]);
+const message = ref('');
+const isError = ref(false);
+const loading = ref(false);
+const router = useRouter();
+const authStore = useAuthStore();
 
-            try {
-                this.stats = await statsService.getStats();
-            } catch (err) {
-                console.error('Error loading stats:', err);
-                this.error = 'Failed to load statistics. Make sure the backend is running and you are logged in as admin.';
-                // Usar dados de exemplo se a API falhar
-                this.stats = {
-                    total_users: 0,
-                    total_cars: 0,
-                    total_magazines: 0,
-                    total_races: 0
-                };
-            } finally {
-                this.loading = false;
-            }
-        }
+const API_URL = 'http://localhost:8000';
+
+const goHome = () => router.push('/home');
+
+const handleLogout = () => {
+    authStore.logout();
+    router.push('/login');
+};
+
+const getStatusClass = (code) => {
+    if (code >= 200 && code < 300) return 'status-2xx';
+    if (code >= 400 && code < 500) return 'status-4xx';
+    if (code >= 500) return 'status-5xx';
+    return '';
+};
+
+const fetchStats = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/analytics/dashboard-stats`);
+        stats.value = res.data;
+    } catch (error) {
+        console.error("Failed to fetch stats", error);
     }
-}
+};
+
+const fetchLogs = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/etl/history?limit=10`);
+        logs.value = res.data;
+    } catch (error) {
+        console.error("Failed to fetch logs", error);
+    }
+};
+
+const syncCars = async () => {
+    loading.value = true;
+    message.value = 'Syncing cars...';
+    try {
+        const carsRes = await fetch('/70sCarCulture-s/json-cars.json');
+        if (!carsRes.ok) throw new Error("Could not load local json-cars.json");
+        const carsData = await carsRes.json();
+
+        const res = await axios.post(`${API_URL}/etl/seed-cars`, carsData);
+        message.value = res.data.message;
+        isError.value = false;
+        fetchStats(); // Refresh count
+    } catch (error) {
+        message.value = "Sync failed: " + (error.response?.data?.detail || error.message);
+        isError.value = true;
+    } finally {
+        loading.value = false;
+    }
+};
+
+const run70sETL = async () => {
+    loading.value = true;
+    message.value = 'Triggering 70s Data Import...';
+    try {
+        const res = await axios.post(`${API_URL}/etl/ergast/run-70s`);
+        message.value = res.data.message;
+        isError.value = false;
+        setTimeout(fetchLogs, 2000);
+    } catch (error) {
+        message.value = "ETL Trigger failed: " + (error.response?.data?.detail || error.message);
+        isError.value = true;
+    } finally {
+        loading.value = false;
+    }
+};
+
+onMounted(() => {
+    fetchStats();
+    fetchLogs();
+});
 </script>
 
 <style scoped>
 .admin-page {
     min-height: 100vh;
+    padding: 20px;
     background-color: #92D4F0;
-    padding: 40px 20px;
+    background-image:
+        linear-gradient(45deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.05) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.05) 75%);
+    background-size: 20px 20px;
 }
 
 .admin-container {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
+    animation: fadeInUp 0.6s ease-out;
 }
 
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header */
 .admin-header {
-    text-align: center;
-    margin-bottom: 40px;
     background-color: #F58F56;
-    padding: 30px;
-    border-radius: 15px;
     border: 3px solid #1a1a1a;
-    box-shadow:
-        rgba(0, 0, 0, 0.25) 0px 54px 55px,
-        rgba(0, 0, 0, 0.12) 0px -12px 30px,
-        rgba(0, 0, 0, 0.12) 0px 4px 6px,
-        rgba(0, 0, 0, 0.17) 0px 12px 13px,
-        rgba(0, 0, 0, 0.09) 0px -3px 5px;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 0px #1a1a1a;
+    position: relative;
 }
 
 .admin-header h1 {
-    font-size: 3em;
-    margin: 0 0 10px 0;
-    color: #1a1a1a;
     font-family: 'Jersey 25', sans-serif;
+    font-size: 3em;
+    margin: 0;
+    color: #1a1a1a;
+    text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.3);
 }
 
 .admin-header p {
-    font-size: 1.3em;
-    margin: 0;
-    color: #1a1a1a;
-    opacity: 0.9;
     font-family: 'Jersey 25', sans-serif;
+    font-size: 1.5em;
+    margin-top: 5px;
+    opacity: 0.8;
 }
 
-.admin-content {
+.header-buttons {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
-    flex-direction: column;
-    gap: 30px;
+    gap: 10px;
 }
 
-.admin-card {
-    background-color: whitesmoke;
-    padding: 30px;
-    border-radius: 15px;
-    border: 3px solid #1a1a1a;
-    box-shadow:
-        rgba(0, 0, 0, 0.25) 0px 54px 55px,
-        rgba(0, 0, 0, 0.12) 0px -12px 30px,
-        rgba(0, 0, 0, 0.12) 0px 4px 6px,
-        rgba(0, 0, 0, 0.17) 0px 12px 13px,
-        rgba(0, 0, 0, 0.09) 0px -3px 5px;
-}
-
-.admin-card h2 {
-    font-size: 2.5em;
-    margin: 0 0 25px 0;
-    color: #1a1a1a;
+.btn-home,
+.btn-logout {
+    background: #1a1a1a;
+    color: white;
+    border: none;
+    padding: 10px 15px;
     font-family: 'Jersey 25', sans-serif;
+    font-size: 1.2em;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.stats-grid {
+.btn-home:hover,
+.btn-logout:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+.btn-logout {
+    background-color: #d32f2f;
+    /* Red for logout */
+}
+
+.btn-logout:hover {
+    background-color: #b71c1c;
+}
+
+/* Stats */
+.stats-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
+    margin-bottom: 25px;
 }
 
 .stat-card {
-    background-color: white;
-    padding: 25px;
-    border-radius: 10px;
-    border: 2px solid #1a1a1a;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.stat-icon {
-    font-size: 3em;
-    width: 70px;
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #F58F56;
-    border-radius: 50%;
-    border: 2px solid #1a1a1a;
-}
-
-.stat-info h3 {
-    margin: 0 0 5px 0;
-    font-size: 1.2em;
-    color: #666;
-    font-family: 'Jersey 25', sans-serif;
-}
-
-.stat-number {
-    font-size: 2.5em;
-    font-weight: bold;
-    margin: 0;
-    color: #1a1a1a;
-    font-family: 'Jersey 25', sans-serif;
-}
-
-.admin-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.action-card {
     background-color: whitesmoke;
-    padding: 25px;
-    border-radius: 15px;
     border: 3px solid #1a1a1a;
-    box-shadow:
-        rgba(0, 0, 0, 0.25) 0px 54px 55px,
-        rgba(0, 0, 0, 0.12) 0px -12px 30px,
-        rgba(0, 0, 0, 0.12) 0px 4px 6px,
-        rgba(0, 0, 0, 0.17) 0px 12px 13px,
-        rgba(0, 0, 0, 0.09) 0px -3px 5px;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 5px 5px 0px #1a1a1a;
 }
 
-.action-card h3 {
-    font-size: 1.8em;
-    margin: 0 0 20px 0;
-    color: #1a1a1a;
+.stat-card h3 {
     font-family: 'Jersey 25', sans-serif;
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+    color: #666;
+}
+
+.stat-value {
+    font-family: 'Jersey 25', sans-serif;
+    font-size: 3em;
+    font-weight: bold;
+    color: #1a1a1a;
+}
+
+/* Actions */
+.actions-card,
+.logs-card {
+    background-color: whitesmoke;
+    border: 3px solid #1a1a1a;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 5px 5px 0px #1a1a1a;
+}
+
+.actions-card h2,
+.logs-card h2 {
+    font-family: 'Jersey 25', sans-serif;
+    font-size: 2em;
+    margin-top: 0;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .action-buttons {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    gap: 30px;
+    flex-wrap: wrap;
 }
 
-.action-btn {
-    padding: 12px 20px;
-    background-color: #1a1a1a;
-    color: white;
-    border: 2px solid #1a1a1a;
+.action-group {
+    flex: 1;
+    min-width: 250px;
+    background: white;
+    padding: 15px;
     border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: 'Jersey 25', sans-serif;
+    border: 2px solid #eee;
 }
 
-.action-btn:hover {
-    background-color: #646cff;
-    border-color: #646cff;
-    transform: translateX(5px);
-}
-
-.back-to-site {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.back-btn {
-    display: inline-block;
-    padding: 15px 30px;
-    background-color: #F58F56;
-    color: #1a1a1a;
-    text-decoration: none;
-    border-radius: 10px;
-    font-size: 1.3em;
-    font-weight: bold;
-    border: 3px solid #1a1a1a;
-    transition: all 0.3s ease;
-    font-family: 'Jersey 25', sans-serif;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.back-btn:hover {
-    background-color: #1a1a1a;
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
-
-.loading {
-    text-align: center;
-    padding: 60px 20px;
-    background-color: whitesmoke;
-    border-radius: 15px;
-    border: 3px solid #1a1a1a;
-    box-shadow:
-        rgba(0, 0, 0, 0.25) 0px 54px 55px,
-        rgba(0, 0, 0, 0.12) 0px -12px 30px,
-        rgba(0, 0, 0, 0.12) 0px 4px 6px,
-        rgba(0, 0, 0, 0.17) 0px 12px 13px,
-        rgba(0, 0, 0, 0.09) 0px -3px 5px;
-}
-
-.loading p {
-    font-size: 1.5em;
-    color: #1a1a1a;
-    font-family: 'Jersey 25', sans-serif;
+.action-group h4 {
     margin: 0;
-}
-
-.error-message {
-    text-align: center;
-    padding: 40px 20px;
-    background-color: #ffebee;
-    border-radius: 15px;
-    border: 3px solid #c62828;
-    box-shadow:
-        rgba(0, 0, 0, 0.25) 0px 54px 55px,
-        rgba(0, 0, 0, 0.12) 0px -12px 30px,
-        rgba(0, 0, 0, 0.12) 0px 4px 6px,
-        rgba(0, 0, 0, 0.17) 0px 12px 13px,
-        rgba(0, 0, 0, 0.09) 0px -3px 5px;
-}
-
-.error-message p {
-    font-size: 1.3em;
-    color: #c62828;
     font-family: 'Jersey 25', sans-serif;
-    margin: 0 0 20px 0;
+    font-size: 1.4em;
 }
 
-.retry-btn {
-    padding: 12px 30px;
-    background-color: #c62828;
+.btn-action {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #1a1a1a;
     color: white;
-    border: 2px solid #c62828;
-    border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    border: none;
+    border-radius: 6px;
     font-family: 'Jersey 25', sans-serif;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: transform 0.1s;
 }
 
-.retry-btn:hover {
-    background-color: #b71c1c;
-    border-color: #b71c1c;
+.btn-action:hover {
+    background-color: #F58F56;
+    color: black;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid #1a1a1a;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .admin-page {
-        padding: 20px 15px;
-    }
-
-    .admin-header {
-        padding: 20px;
-    }
-
-    .admin-header h1 {
-        font-size: 2.2em;
-    }
-
-    .admin-header p {
-        font-size: 1.1em;
-    }
-
-    .admin-card {
-        padding: 20px;
-    }
-
-    .admin-card h2 {
-        font-size: 2em;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-actions {
-        grid-template-columns: 1fr;
-    }
-
-    .stat-icon {
-        font-size: 2.5em;
-        width: 60px;
-        height: 60px;
-    }
-
-    .stat-number {
-        font-size: 2em;
-    }
+.btn-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-@media (max-width: 480px) {
-    .admin-header h1 {
-        font-size: 1.8em;
-    }
+.status-msg {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+}
 
-    .admin-header p {
-        font-size: 1em;
-    }
+.status-msg.success {
+    background-color: #d4edda;
+    color: #155724;
+}
 
-    .admin-card h2 {
-        font-size: 1.6em;
-    }
+.status-msg.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
 
-    .action-card h3 {
-        font-size: 1.5em;
-    }
+/* Logs */
+.logs-table-wrapper {
+    overflow-x: auto;
+}
 
-    .stat-card {
-        padding: 20px;
-    }
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+}
 
-    .stat-icon {
-        font-size: 2em;
-        width: 50px;
-        height: 50px;
-    }
+.logs-table th,
+.logs-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
 
-    .stat-number {
-        font-size: 1.8em;
-    }
+.logs-table th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
 
-    .action-btn {
-        font-size: 1em;
-        padding: 10px 15px;
-    }
+.status-2xx {
+    color: green;
+    font-weight: bold;
+}
 
-    .back-btn {
-        font-size: 1.1em;
-        padding: 12px 24px;
-    }
+.status-4xx {
+    color: orange;
+    font-weight: bold;
+}
+
+.status-5xx {
+    color: red;
+    font-weight: bold;
+}
+
+.btn-refresh {
+    margin-top: 15px;
+    padding: 8px 15px;
+    background: transparent;
+    border: 2px solid #1a1a1a;
+    font-family: 'Jersey 25', sans-serif;
+    font-size: 1.1em;
+    cursor: pointer;
+}
+
+.btn-refresh:hover {
+    background: #eee;
 }
 </style>

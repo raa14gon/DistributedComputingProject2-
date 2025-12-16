@@ -6,7 +6,8 @@ export default {
   components: { Menu, Footer },
   computed: {
     showHeaderFooter() {
-      return this.$route.path !== '/' && this.$route.path !== '/Login' && this.$route.path !== '/SignUp';
+      const p = this.$route.path.toLowerCase();
+      return p !== '/' && p !== '/login' && p !== '/signup';
     }
   }
 }

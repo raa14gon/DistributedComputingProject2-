@@ -1,12 +1,12 @@
 <template>
-    <div class="login-page">
-        <div class="login-container">
-            <div class="login-header">
+    <div class="signup-page">
+        <div class="signup-container">
+            <div class="signup-header">
                 <h1>70s Car Culture</h1>
                 <p>Welcome Back to the Golden Era</p>
             </div>
 
-            <div class="login-card">
+            <div class="signup-card">
                 <h2>Login</h2>
                 <form @submit.prevent="handleLogin">
                     <div class="form-group">
@@ -16,16 +16,17 @@
 
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" v-model="password" placeholder="Enter your password"
-                            required>
+                        <input type="password" id="password" v-model="password" placeholder="Enter your password" required>
                     </div>
 
-                    <button type="submit" class="btn-login">
+                    <button type="submit" class="btn-signup">
                         Sign In
                     </button>
                 </form>
 
-                <div class="login-footer">
+                <p v-if="error" class="error-msg">{{ error }}</p>
+
+                <div class="signup-footer">
                     <p>Don't have an account? <router-link to="/SignUp">Sign up</router-link></p>
                 </div>
             </div>
@@ -33,25 +34,41 @@
     </div>
 </template>
 
-<script>
-export default {
-    data() {
-        return {
-            username: '',
-            password: ''
+<script setup>
+import { ref } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import { useRouter } from 'vue-router';
+
+const username = ref('');
+const password = ref('');
+const error = ref('');
+const authStore = useAuthStore();
+const router = useRouter();
+
+const handleLogin = async () => {
+    const success = await authStore.login(username.value, password.value);
+    if (success) {
+        if (authStore.isAdmin) {
+             router.push('/home'); 
+        } else {
+             router.push('/home');
         }
-    },
-    methods: {
-        handleLogin() {
-            console.log('Login attempt:', this.username);
-            this.$router.push('/Home');
-        }
+    } else {
+        error.value = 'Invalid credentials';
     }
-}
+};
 </script>
 
 <style scoped>
-.login-page {
+.error-msg {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* Copied from SignUp.vue for consistency */
+.signup-page {
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -67,7 +84,7 @@ export default {
     background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-.login-container {
+.signup-container {
     width: 100%;
     max-width: 450px;
     animation: fadeInUp 0.6s ease-out;
@@ -85,7 +102,7 @@ export default {
     }
 }
 
-.login-header {
+.signup-header {
     text-align: center;
     width: 100%;
     border-radius: 15px;
@@ -101,7 +118,7 @@ export default {
     color: #1a1a1a;
 }
 
-.login-header h1 {
+.signup-header h1 {
     font-size: 3em;
     margin: 0 0 10px 0;
     font-family: 'Jersey 25', sans-serif;
@@ -109,14 +126,14 @@ export default {
     letter-spacing: 2px;
 }
 
-.login-header p {
+.signup-header p {
     font-size: 1.2em;
     margin: 0;
     opacity: 0.8;
     font-family: 'Jersey 25', sans-serif;
 }
 
-.login-card {
+.signup-card {
     background-color: whitesmoke;
     border-radius: 15px;
     padding: 40px;
@@ -129,7 +146,7 @@ export default {
     border: 3px solid #1a1a1a;
 }
 
-.login-card h2 {
+.signup-card h2 {
     text-align: center;
     margin: 0 0 30px 0;
     font-size: 2.5em;
@@ -138,7 +155,7 @@ export default {
 }
 
 .form-group {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
@@ -173,7 +190,7 @@ export default {
     color: #999;
 }
 
-.btn-login {
+.btn-signup {
     width: 100%;
     padding: 14px;
     font-size: 1.2em;
@@ -189,96 +206,100 @@ export default {
     margin-top: 10px;
 }
 
-.btn-login:hover {
+.btn-signup:hover {
     background-color: #646cff;
     border-color: #646cff;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(100, 108, 255, 0.3);
 }
 
-.btn-login:active {
+.btn-signup:active {
     transform: translateY(0);
 }
 
-.login-footer {
+.signup-footer {
     text-align: center;
     margin-top: 25px;
     padding-top: 20px;
     border-top: 2px solid #ddd;
 }
 
-.login-footer p {
+.signup-footer p {
     margin: 0;
     font-size: 1em;
     color: #666;
 }
 
-.login-footer a {
+.signup-footer a {
     color: #646cff;
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s ease;
 }
 
-.login-footer a:hover {
+.signup-footer a:hover {
     color: #535bf2;
     text-decoration: underline;
 }
 
 /* Responsividade */
 @media (max-width: 768px) {
-    .login-header h1 {
+    .signup-header h1 {
         font-size: 2.5em;
     }
 
-    .login-header p {
+    .signup-header p {
         font-size: 1em;
     }
 
-    .login-card {
+    .signup-card {
         padding: 30px 25px;
     }
 
-    .login-card h2 {
+    .signup-card h2 {
         font-size: 2em;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
     }
 
     .form-group label {
         font-size: 1em;
     }
 
-    .btn-login {
+    .btn-signup {
         font-size: 1.1em;
         padding: 12px;
     }
 }
 
 @media (max-width: 480px) {
-    .login-page {
+    .signup-page {
         padding: 15px;
     }
 
-    .login-header h1 {
+    .signup-header h1 {
         font-size: 2em;
         letter-spacing: 1px;
     }
 
-    .login-header p {
+    .signup-header p {
         font-size: 0.9em;
     }
 
-    .login-card {
+    .signup-card {
         padding: 25px 20px;
         border-radius: 12px;
     }
 
-    .login-card h2 {
+    .signup-card h2 {
         font-size: 1.8em;
         margin-bottom: 25px;
     }
 
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .form-group label {
@@ -291,27 +312,31 @@ export default {
         font-size: 0.95em;
     }
 
-    .btn-login {
+    .btn-signup {
         font-size: 1em;
         padding: 11px;
     }
 
-    .login-footer p {
+    .signup-footer p {
         font-size: 0.9em;
     }
 }
 
 @media (max-width: 360px) {
-    .login-header h1 {
+    .signup-header h1 {
         font-size: 1.7em;
     }
 
-    .login-card {
+    .signup-card {
         padding: 20px 15px;
     }
 
-    .login-card h2 {
+    .signup-card h2 {
         font-size: 1.5em;
+    }
+
+    .form-group {
+        margin-bottom: 14px;
     }
 }
 </style>

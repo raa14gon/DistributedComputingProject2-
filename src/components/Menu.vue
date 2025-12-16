@@ -9,21 +9,18 @@
             <router-link to="/">Home</router-link>
             <router-link to="/Cars">Cars </router-link>
             <router-link to="/VintageRacing">Vintage Racing</router-link>
+            <router-link to="/Admin" v-if="authStore.isAdmin">Admin</router-link>
         </div>
 
-        <div class="admin-link">
-            <router-link to="/Admin" class="admin-btn">
-                <span class="admin-icon">⚙️</span>
-                Admin
-            </router-link>
-        </div>
     </nav>
 </template>
 
-<script>
-export default {
-    name: "Menu"
-}
+<script setup>
+import { useAuthStore } from '../stores/auth';
+import { useRouter } from 'vue-router';
+
+const authStore = useAuthStore();
+const router = useRouter();
 </script>
 
 <style>
