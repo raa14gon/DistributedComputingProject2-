@@ -80,7 +80,7 @@ export default {
     },
 
     mounted() {
-        fetch('/json-magazines.json')
+        fetch('/70sCarCulture-s/json-magazines.json')
             .then(res => res.json())
             .then(data => this.magazines = data)
             .catch(err => this.error = err.message)
@@ -129,7 +129,7 @@ export default {
 
 <style scoped>
 header {
-        box-shadow:rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
 
     display: flex;
     align-items: center;
@@ -160,7 +160,7 @@ header {
 }
 
 .scene {
-        box-shadow: rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
 
     position: relative;
     height: 600px;
@@ -351,7 +351,7 @@ header {
     align-items: center;
     justify-content: flex-end;
     min-height: 500px;
-    
+
 }
 
 .container-follow-us {
@@ -365,7 +365,7 @@ header {
     max-width: 1170px;
     height: 350px;
     background-color: whitesmoke;
-    
+
 }
 
 .follow-us {

@@ -4,11 +4,7 @@
     </header>
     <section>
         <div class="cards-container">
-            <CardCars 
-                v-for="car in cars" 
-                :key="car.id" 
-                :cars="car" 
-            />
+            <CardCars v-for="car in cars" :key="car.id" :cars="car" />
         </div>
     </section>
 </template>
@@ -16,10 +12,10 @@
 <script>
 import CardCars from '../components/CardCars.vue';
 
- export default {
-    components: {CardCars},
+export default {
+    components: { CardCars },
 
-     data() {
+    data() {
         return {
             cars: [],
             selectedId: null,
@@ -28,7 +24,7 @@ import CardCars from '../components/CardCars.vue';
     },
 
     mounted() {
-        fetch('/json-cars.json')
+        fetch('/70sCarCulture-s/json-cars.json')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -41,10 +37,10 @@ import CardCars from '../components/CardCars.vue';
             .catch(error => {
                 this.error = 'There was a problem fetching the car data: ' + error.message;
             });
-        }
- }   
+    }
+}   
 </script>
- 
+
 <style scoped>
 .title-header {
     background-color: whitesmoke;

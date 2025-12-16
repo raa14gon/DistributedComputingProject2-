@@ -1,5 +1,5 @@
 export async function getRacesByYear(year) {
-  const response = await fetch(`/ergast/api/f1/${year}/races.json`)
+  const response = await fetch(`https://api.jolpi.ca/ergast/api/f1/${year}/races.json`)
   if (!response.ok) {
     throw new Error(`HTTP error ${response.status}`)
   }

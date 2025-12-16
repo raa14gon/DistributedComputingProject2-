@@ -6,9 +6,9 @@
         </div>
 
         <div class="links">
-            <a href="/">Home</a>
-            <a href="/Cars">Cars </a>
-            <a href="/VintageRacing">Vintage Racing</a>
+            <router-link to="/">Home</router-link>
+            <router-link to="/Cars">Cars </router-link>
+            <router-link to="/VintageRacing">Vintage Racing</router-link>
         </div>
     </nav>
 </template>

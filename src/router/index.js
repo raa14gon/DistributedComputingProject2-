@@ -6,11 +6,11 @@ import VintageRacing from '../pages/VintageRacing.vue';
 const routes = [
     { path: '/', component: Home },
     { path: '/Cars', component: Cars },
-    { path: '/VintageRacing', component: VintageRacing},
+    { path: '/VintageRacing', component: VintageRacing },
 ]
 
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHistory(import.meta.env.BASE_URL),
     routes
 })
 

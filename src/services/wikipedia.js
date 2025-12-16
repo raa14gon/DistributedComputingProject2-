@@ -1,7 +1,7 @@
 export async function getRaceHistory(title) {
   try {
     const res = await fetch(
-      `/wiki/page/summary/${encodeURIComponent(title)}`,
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
       {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
